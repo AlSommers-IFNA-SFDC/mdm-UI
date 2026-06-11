@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MDM Hierarchy Navigator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .session-info {
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .session-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 100px auto;
+        }
+
+        .login-container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .item-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .item {
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .item:hover {
+            border-color: #667eea;
+            background: #f9fafb;
+            transform: translateX(5px);
+        }
+
+        .item.selected {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .item-detail {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .breadcrumb {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            color: #667eea;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb-item:hover {
+            color: #764ba2;
+        }
+
+        .breadcrumb-separator {
+            color: #9ca3af;
+        }
+
+        .breadcrumb-item.active {
+            color: #333;
+            cursor: default;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <h2>MDM Hierarchy Navigator</h2>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Enter your MDM username">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter your MDM password">
+        </div>
+        <button class="btn" onclick="login()">Login</button>
+        <div id="loginError" class="error-message hidden"></div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="container hidden">
+        <!-- Header -->
+        <div class="header">
+            <h1>MDM Hierarchy Navigator</h1>
+            <div class="session-info">
+                <div class="session-status">
+                    <span class="status-dot"></span>
+                    <span id="sessionUser">User</span>
+                </div>
+                <span id="sessionExpiry"></span>
+                <button class="btn" onclick="logout()" style="width: auto; padding: 8px 16px; font-size: 14px;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Breadcrumb -->
+        <div id="breadcrumb" class="breadcrumb hidden"></div>
+
+        <!-- Main Content Grid -->
+        <div class="main-content">
+            <!-- Organizations Card -->
+            <div class="card">
+                <h2>1. Organizations</h2>
+                <div class="search-box">
+                    <input type="text" id="orgSearch" placeholder="Search organizations..." onkeyup="searchOrganizations()">
+                </div>
+                <div id="orgList" class="item-list">
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    <div>Search for an organization to begin</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locations Card -->
+            <div class="card">
+                <h2>2. Locations</h2>
+                <div id="locationList" class="item-list">
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <div>Select an organization to view locations</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu Catalogs Card -->
+            <div class="card">
+                <h2>3. Menu Catalogs</h2>
+                <div id="menuList" class="item-list">
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <div>Select a location to view menu catalogs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recipes Card -->
+            <div class="card">
+                <h2>4. Recipes</h2>
+                <div id="recipeList" class="item-list">
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        <div>Select a menu catalog to view recipes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modifier Groups Card -->
+            <div class="card">
+                <h2>5. Modifier Groups</h2>
+                <div id="modifierGroupList" class="item-list">
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                        <div>Select a recipe to view modifier groups</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ingredients Card -->
+            <div class="card">
+                <h2>6. Ingredients</h2>
+                <div id="ingredientList" class="item-list">
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                        <div>Select a modifier group to view ingredients</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let state = {
+            selectedOrg: null,
+            selectedLocation: null,
+            selectedMenu: null,
+            selectedRecipe: null,
+            selectedModifierGroup: null
+        };
+
+        // API base URL
+        const API_BASE = 'http://localhost:8080/api';
+
+        // Initialize
+        window.onload = function() {
+            checkSession();
+        };
+
+        // Authentication
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            if (!username || !password) {
+                errorDiv.textContent = 'Please enter both username and password';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('sessionUser').textContent = data.username;
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    updateSessionInfo();
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Connection error: ' + error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function checkSession() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/session`);
+                const data = await response.json();
+
+                if (data.valid) {
+                    document.getElementById('sessionUser').textContent = data.username;
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    updateSessionInfo();
+                }
+            } catch (error) {
+                console.log('No active session');
+            }
+        }
+
+        function logout() {
+            // Clear session on server by just reloading
+            location.reload();
+        }
+
+        async function updateSessionInfo() {
+            const response = await fetch(`${API_BASE}/auth/session`);
+            const data = await response.json();
+            if (data.valid) {
+                document.getElementById('sessionExpiry').textContent =
+                    `Session expires in ${data.remainingMinutes} minutes`;
+            }
+        }
+
+        // Search organizations
+        let searchTimeout;
+        function searchOrganizations() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const query = document.getElementById('orgSearch').value;
+                if (query.length < 2) return;
+
+                showLoading('orgList');
+                try {
+                    const response = await fetch(`${API_BASE}/organizations/search?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        displayOrganizations(data.organizations);
+                    } else {
+                        showError('orgList', data.error);
+                    }
+                } catch (error) {
+                    showError('orgList', error.message);
+                }
+            }, 300);
+        }
+
+        function displayOrganizations(orgs) {
+            const list = document.getElementById('orgList');
+            if (orgs.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div>No organizations found</div></div>';
+                return;
+            }
+
+            list.innerHTML = orgs.map(org => `
+                <div class="item" onclick="selectOrganization('${org.businessId}', '${escapeHtml(org.name)}')">
+                    <div class="item-name">${escapeHtml(org.name)}</div>
+                    <div class="item-detail">ID: ${org.businessId}</div>
+                    ${org.type ? `<div class="item-detail">Type: ${org.type}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function selectOrganization(businessId, name) {
+            state.selectedOrg = { businessId, name };
+            state.selectedLocation = null;
+            state.selectedMenu = null;
+            state.selectedRecipe = null;
+            state.selectedModifierGroup = null;
+
+            updateBreadcrumb();
+            clearDownstream('location');
+
+            showLoading('locationList');
+            try {
+                const response = await fetch(`${API_BASE}/organizations/${businessId}/locations`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayLocations(data.locations);
+                } else {
+                    showError('locationList', data.error);
+                }
+            } catch (error) {
+                showError('locationList', error.message);
+            }
+        }
+
+        function displayLocations(locations) {
+            const list = document.getElementById('locationList');
+            if (locations.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div>No locations found</div></div>';
+                return;
+            }
+
+            list.innerHTML = locations.map(loc => `
+                <div class="item" onclick="selectLocation('${loc.businessId}', '${escapeHtml(loc.name)}')">
+                    <div class="item-name">${escapeHtml(loc.name)}</div>
+                    <div class="item-detail">ID: ${loc.businessId}</div>
+                    ${loc.city ? `<div class="item-detail">${loc.city}${loc.state ? ', ' + loc.state : ''}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function selectLocation(businessId, name) {
+            state.selectedLocation = { businessId, name };
+            state.selectedMenu = null;
+            state.selectedRecipe = null;
+            state.selectedModifierGroup = null;
+
+            updateBreadcrumb();
+            clearDownstream('menu');
+
+            showLoading('menuList');
+            try {
+                const response = await fetch(`${API_BASE}/locations/${businessId}/menus`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayMenus(data.menus);
+                } else {
+                    showError('menuList', data.error);
+                }
+            } catch (error) {
+                showError('menuList', error.message);
+            }
+        }
+
+        function displayMenus(menus) {
+            const list = document.getElementById('menuList');
+            if (menus.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div>No menu catalogs found</div></div>';
+                return;
+            }
+
+            list.innerHTML = menus.map(menu => `
+                <div class="item" onclick="selectMenu('${menu.businessId}', '${escapeHtml(menu.name)}')">
+                    <div class="item-name">${escapeHtml(menu.name)}</div>
+                    <div class="item-detail">ID: ${menu.businessId}</div>
+                    ${menu.description ? `<div class="item-detail">${escapeHtml(menu.description)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function selectMenu(businessId, name) {
+            state.selectedMenu = { businessId, name };
+            state.selectedRecipe = null;
+            state.selectedModifierGroup = null;
+
+            updateBreadcrumb();
+            clearDownstream('recipe');
+
+            showLoading('recipeList');
+            try {
+                const response = await fetch(`${API_BASE}/menus/${businessId}/recipes`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayRecipes(data.recipes);
+                } else {
+                    showError('recipeList', data.error);
+                }
+            } catch (error) {
+                showError('recipeList', error.message);
+            }
+        }
+
+        function displayRecipes(recipes) {
+            const list = document.getElementById('recipeList');
+            if (recipes.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div>No recipes found</div></div>';
+                return;
+            }
+
+            list.innerHTML = recipes.map(recipe => `
+                <div class="item" onclick="selectRecipe('${recipe.businessId}', '${escapeHtml(recipe.name)}')">
+                    <div class="item-name">${escapeHtml(recipe.name)}</div>
+                    <div class="item-detail">ID: ${recipe.businessId}</div>
+                    ${recipe.category ? `<div class="item-detail">Category: ${recipe.category}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function selectRecipe(businessId, name) {
+            state.selectedRecipe = { businessId, name };
+            state.selectedModifierGroup = null;
+
+            updateBreadcrumb();
+            clearDownstream('modifierGroup');
+
+            showLoading('modifierGroupList');
+            try {
+                const response = await fetch(`${API_BASE}/recipes/${businessId}/modifier-groups`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayModifierGroups(data.modifierGroups);
+                } else {
+                    showError('modifierGroupList', data.error);
+                }
+            } catch (error) {
+                showError('modifierGroupList', error.message);
+            }
+        }
+
+        function displayModifierGroups(groups) {
+            const list = document.getElementById('modifierGroupList');
+            if (groups.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div>No modifier groups found</div></div>';
+                return;
+            }
+
+            list.innerHTML = groups.map(group => `
+                <div class="item" onclick="selectModifierGroup('${group.businessId}', '${escapeHtml(group.name)}')">
+                    <div class="item-name">${escapeHtml(group.name)}</div>
+                    <div class="item-detail">ID: ${group.businessId}</div>
+                    ${group.description ? `<div class="item-detail">${escapeHtml(group.description)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function selectModifierGroup(businessId, name) {
+            state.selectedModifierGroup = { businessId, name };
+
+            updateBreadcrumb();
+
+            showLoading('ingredientList');
+            try {
+                const response = await fetch(`${API_BASE}/modifier-groups/${businessId}/ingredients`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayIngredients(data.ingredients);
+                } else {
+                    showError('ingredientList', data.error);
+                }
+            } catch (error) {
+                showError('ingredientList', error.message);
+            }
+        }
+
+        function displayIngredients(ingredients) {
+            const list = document.getElementById('ingredientList');
+            if (ingredients.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div>No ingredients found</div></div>';
+                return;
+            }
+
+            list.innerHTML = ingredients.map(ingredient => `
+                <div class="item">
+                    <div class="item-name">${escapeHtml(ingredient.name)}</div>
+                    <div class="item-detail">ID: ${ingredient.businessId}</div>
+                    ${ingredient.allergens ? `<div class="item-detail">Allergens: ${escapeHtml(ingredient.allergens)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Breadcrumb navigation
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            let html = [];
+
+            if (state.selectedOrg) {
+                html.push(`<span class="breadcrumb-item" onclick="resetToOrganization()">${escapeHtml(state.selectedOrg.name)}</span>`);
+            }
+            if (state.selectedLocation) {
+                html.push('<span class="breadcrumb-separator">›</span>');
+                html.push(`<span class="breadcrumb-item" onclick="resetToLocation()">${escapeHtml(state.selectedLocation.name)}</span>`);
+            }
+            if (state.selectedMenu) {
+                html.push('<span class="breadcrumb-separator">›</span>');
+                html.push(`<span class="breadcrumb-item" onclick="resetToMenu()">${escapeHtml(state.selectedMenu.name)}</span>`);
+            }
+            if (state.selectedRecipe) {
+                html.push('<span class="breadcrumb-separator">›</span>');
+                html.push(`<span class="breadcrumb-item" onclick="resetToRecipe()">${escapeHtml(state.selectedRecipe.name)}</span>`);
+            }
+            if (state.selectedModifierGroup) {
+                html.push('<span class="breadcrumb-separator">›</span>');
+                html.push(`<span class="breadcrumb-item active">${escapeHtml(state.selectedModifierGroup.name)}</span>`);
+            }
+
+            if (html.length > 0) {
+                breadcrumb.innerHTML = html.join('');
+                breadcrumb.classList.remove('hidden');
+            } else {
+                breadcrumb.classList.add('hidden');
+            }
+        }
+
+        function resetToOrganization() {
+            selectOrganization(state.selectedOrg.businessId, state.selectedOrg.name);
+        }
+
+        function resetToLocation() {
+            selectLocation(state.selectedLocation.businessId, state.selectedLocation.name);
+        }
+
+        function resetToMenu() {
+            selectMenu(state.selectedMenu.businessId, state.selectedMenu.name);
+        }
+
+        function resetToRecipe() {
+            selectRecipe(state.selectedRecipe.businessId, state.selectedRecipe.name);
+        }
+
+        // Helper functions
+        function clearDownstream(from) {
+            const stages = ['location', 'menu', 'recipe', 'modifierGroup', 'ingredient'];
+            const startIndex = stages.indexOf(from);
+
+            for (let i = startIndex; i < stages.length; i++) {
+                const listId = stages[i] + 'List';
+                const list = document.getElementById(listId);
+                list.innerHTML = '<div class="empty-state"><div>Select previous item</div></div>';
+            }
+        }
+
+        function showLoading(listId) {
+            document.getElementById(listId).innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div>Loading...</div>
+                </div>
+            `;
+        }
+
+        function showError(listId, message) {
+            document.getElementById(listId).innerHTML = `
+                <div class="empty-state">
+                    <div style="color: #dc2626;">Error: ${escapeHtml(message)}</div>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.toString().replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Session refresh
+        setInterval(updateSessionInfo, 60000); // Update every minute
+    </script>
+</body>
+</html>
