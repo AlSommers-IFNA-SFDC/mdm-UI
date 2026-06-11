@@ -110,3 +110,87 @@ Edit `app.py` to customize:
 - Verify the MDM login URL is correct
 - Check that your MDM instance is accessible
 - Confirm credentials are correct
+
+
+## app.py documentation
+ Here's a breakdown of where different API calls are located in app.py:
+
+  🔧 API Call Locations in app.py
+
+  Authentication API (lines ~213-250)
+
+  @app.route('/api/auth/login', methods=['POST'])
+  def login():
+      # Makes POST to: LOGIN_URL (line 19)
+      # Currently: https://dmp-us.informaticacloud.com/saas/public/core/v3/login
+
+  MDM Search API (lines ~125-156)
+
+  class MDMClient:
+      def search_entities(self, entity_type, search_term=None, business_id=None):
+          # Makes POST to: {base_url}/search/public/api/v1/search
+
+  Hierarchy Navigation API (lines ~158-199)
+
+  def get_hierarchy_children(self, hierarchy_name, parent_business_id, ...):
+      # Makes GET to: {base_url}/shm-service/api/v1/hierarchy/{hierarchy_name}/nodes
+      # Fallback uses search if hierarchy endpoint fails
+
+  Flask Route Endpoints (lines ~280-420)
+
+  All these call the MDMClient methods above:
+  - /api/organizations/search (line ~280)
+  - /api/organizations/<id>/locations (line ~320)
+  - /api/locations/<id>/menus (line ~355)
+  - /api/menus/<id>/recipes (line ~390)
+  - /api/recipes/<id>/modifier-groups (line ~425)
+  - /api/modifier-groups/<id>/ingredients (line ~460)
+  
+  📝 Common Updates You Might Need
+
+  Change API Base URL
+
+  Line 19:
+  LOGIN_URL = "https://dmp-us.informaticacloud.com/saas/public/core/v3/login"
+  
+  Change Source System
+
+  Line 20:
+  SOURCE_SYSTEM = "admin.default.system"
+  
+  Update Entity Type Names
+
+  Lines 23-30:
+  ENTITY_TYPES = {
+      'organization': 'Organization',
+      'location': 'Location',
+      'menu_catalog': 'Menu Catalog',
+      # etc...
+  }   
+  
+  Update Hierarchy Names
+
+  Lines 33-59:
+  HIERARCHIES = {
+      'organization_to_location': {
+          'name': 'Location Hierarchy',  # ← Change if different in MDM
+          ...
+      }   
+  }
+
+  Modify Search Parameters
+
+  Lines ~139-146: Adjust pageSize, maxRecords, sorting, etc.
+
+  Add Custom Headers or Authentication
+
+  Lines ~120-123: Modify the headers dict in MDMClient.__init__
+
+  ---
+  Pro tip: After making changes to app.py, restart the Flask server:
+  # Stop current server (Ctrl+C)
+  # Then restart:
+  ./start.sh
+  
+  The index.html file only contains the frontend UI and doesn't make direct API calls - it calls your Flask backend
+  endpoints which then call MDM.
